@@ -9,7 +9,7 @@ if (cluster.isMaster) {
 	var contrib = require('blessed-contrib')
 	//var screen = blessed.screen()
 	
-	var botCount = 10, activeBot = 0
+	var botCount = 1, activeBot = 0
 	var total = 0
 
 	db.prepareAgentsIndex(function(){
@@ -78,24 +78,44 @@ if (cluster.isMaster) {
 
 	var addResourceStats = _.wrapCallback(function addTopFiveSubject(agent,cb){
 		db.returnCollectionTripleStore("resources",function(err,resourcesCollection){
-			resourcesCollection.find({allAgents: agent.uri}).toArray(function(err,allResources){				
-				var allTerms = []
-				allResources.forEach(r =>{
+
+			var allTerms = []
+			var allRoles = []
+			var totalResources = 0
+
+			_(resourcesCollection.find({allAgents: agent.uri}).stream())
+				.map(r =>{
 					allTerms.push(utils.extractTerms(r,agent.uri))
-				})
-				allTerms = utils.topFiveTerms(allTerms)
-
-				var allRoles = []
-				allResources.forEach(r =>{
 					allRoles.push(utils.extractRoles(r,agent.uri))
+					totalResources++
+				}).done(function(){
+					allTerms = utils.topFiveTerms(allTerms)
+					allRoles = utils.topFiveTerms(allRoles)
+					agent.topFiveTerms = allTerms
+					agent.topFiveRoles = allRoles
+					agent.useCount = totalResources
+					cb(err,agent)
 				})
-				allRoles = utils.topFiveTerms(allRoles)
 
-				agent.topFiveTerms = allTerms
-				agent.topFiveRoles = allRoles
-				agent.useCount = allResources.length
-				cb(err,agent)
-			})
+
+			// resourcesCollection.find({allAgents: agent.uri}).toArray(function(err,allResources){				
+			// 	var allTerms = []
+			// 	allResources.forEach(r =>{
+			// 		allTerms.push(utils.extractTerms(r,agent.uri))
+			// 	})
+			// 	allTerms = utils.topFiveTerms(allTerms)
+
+			// 	var allRoles = []
+			// 	allResources.forEach(r =>{
+			// 		allRoles.push(utils.extractRoles(r,agent.uri))
+			// 	})
+			// 	allRoles = utils.topFiveTerms(allRoles)
+
+			// 	agent.topFiveTerms = allTerms
+			// 	agent.topFiveRoles = allRoles
+			// 	agent.useCount = allResources.length
+			// 	cb(err,agent)
+			// })
 		})
 	})
 
@@ -121,7 +141,7 @@ if (cluster.isMaster) {
 					.sequence()		
 					.map(updateAgentsCollection)
 					.sequence()					
-					.batch(999)
+					.batch(500)
 					.map(x =>{
 						total = total + x.length
 						//console.log(total)
