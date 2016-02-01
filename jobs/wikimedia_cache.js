@@ -153,7 +153,7 @@ lister.on('end', function() {
 
 		agentDataCache.count({ wikidataImage : { $ne: null}},{wikidata:1,wikidataImage:1},function(err,c){total=c})
 
-		_(agentDataCache.find({ wikidataImage : { $ne: null}},{wikidata:1,wikidataImage:1}).stream())
+		_(agentDataCache.find({ wikidataImage : { $ne: null}},{wikidata:1,wikidataImage:1}).batchSize(10).stream())
 			.map(_.curry(downloadUpload))
 			.nfcall([])
 			.series()
