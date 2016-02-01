@@ -9,7 +9,7 @@ if (cluster.isMaster) {
 	var contrib = require('blessed-contrib')
 	//var screen = blessed.screen()
 	
-	var botCount = 10, activeBot = 0
+	var botCount = 20, activeBot = 0
 	var total = 0
 
 	db.prepareAgentsIndex(function(){
@@ -59,7 +59,7 @@ if (cluster.isMaster) {
 					}
 					buildWorker()
 
-				},10000)
+				},30000)
 
 
 			})
@@ -89,11 +89,13 @@ if (cluster.isMaster) {
 					allRoles.push(utils.extractRoles(r,agent.uri))
 					totalResources++
 				}).done(function(){
+
 					allTerms = utils.topFiveTerms(allTerms)
 					allRoles = utils.topFiveTerms(allRoles)
 					agent.topFiveTerms = allTerms
 					agent.topFiveRoles = allRoles
 					agent.useCount = totalResources
+
 					cb(err,agent)
 				})
 
