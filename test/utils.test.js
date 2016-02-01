@@ -214,6 +214,48 @@ var resourceForTerms = {
             }
         }
     ],
+    "roles:aut": [
+        {
+            "label": "Whitman, Walt, 1819-1892",
+            "objectLiteral": null,
+            "objectLiteralType": null,
+            "objectUri": "agents:10015506",
+            "provo": {
+                "created": "2016-01-20T01:55:58.854Z",
+                "creator": "RI",
+                "recordIdentifier": "72643750-c6b4-012f-30ff-58d385a7bc34",
+                "source": "data:10002"
+            }
+        }
+    ],
+    "roles:app": [
+        {
+            "label": "NOT Whitman, Walt, 1819-1892",
+            "objectLiteral": null,
+            "objectLiteralType": null,
+            "objectUri": "agents:10015522",
+            "provo": {
+                "created": "2016-01-20T01:55:58.854Z",
+                "creator": "RI",
+                "recordIdentifier": "72643750-c6b4-012f-30ff-58d385a7bc34",
+                "source": "data:10002"
+            }
+        }
+    ],    
+    "roles:com": [
+        {
+            "label": "Whitman, Walt, 1819-1892",
+            "objectLiteral": null,
+            "objectLiteralType": null,
+            "objectUri": "agents:10015506",
+            "provo": {
+                "created": "2016-01-20T01:55:58.854Z",
+                "creator": "RI",
+                "recordIdentifier": "72643750-c6b4-012f-30ff-58d385a7bc34",
+                "source": "data:10002"
+            }
+        }
+    ],
     "dcterms:created": [
         {
             "objectLiteral": "1875",
@@ -659,6 +701,16 @@ describe('utils', function () {
 
     })
 
+    it('extract role assoicated with a agent', function () {
+        var r = utils.extractRoles(resourceForTerms,10015506)
+        r.length.should.equal(2)
+        r[0].should.equal('Author')
+
+        var r = utils.topFiveTerms([r])
+        r[0].should.equal('Author')
+        
+
+    })
 
 })
 

@@ -3,43 +3,66 @@ var cluster = require('cluster');
 if (cluster.isMaster) {
 
 	var db = require("../lib/db.js")
+	var utils = require("../lib/utils.js")
 	var config = require("config")
 	var blessed = require('blessed')
 	var contrib = require('blessed-contrib')
 	//var screen = blessed.screen()
 	
-	var botCount = 11
+	var botCount = 10, activeBot = 0
+	var total = 0
 
-	//find out how many agents there are total
-	db.returnCollectionTripleStore("agents",function(err,agentsCollection){
-		agentsCollection.count(function(err,count){
+	db.prepareAgentsIndex(function(){
 
-			//break up how much to work for each bot
-			var perBot = Math.floor(count / botCount)
+		//find out how many agents there are total
+		db.returnCollectionTripleStore("agents",function(err,agentsCollection){
+			agentsCollection.count(function(err,count){
 
-			//index 0
-			var start = -1
+				//break up how much to work for each bot
+				var perBot = Math.floor(count / botCount)
 
-			var buildWorker = function(){
+				//index 0
+				var start = perBot*-1
 
-				start = start + perBot
+				console.log("perBot",perBot)
 
-				var worker = cluster.fork();
-				console.log('Spawing worker:',worker.id, "starting at: ",start)
-
-				//send the first one
-				worker.send({ start: start })
-				activeBotCount++
-
-			}
-
-			for (var i = 1; i <= botCount -1 ; i++) {
-				setTimeout(function(){
-					buildWorker()
-				}, Math.floor(Math.random() * (10000 - 0)))
-			}
-
+				var buildWorker = function(){
+					activeBot++
 			
+					start = start + perBot
+
+					var worker = cluster.fork();
+
+					worker.on('message', function(msg) {
+						if (msg.start) {
+							worker.send({ start: start, total : perBot -1 })
+						}
+
+						if (msg.totalUpdate){
+							total = total + parseInt(msg.totalUpdate)
+							console.log(total)
+						}
+
+
+					})
+				}
+
+				// for (var i = 1; i <= botCount; i++) {
+				// 	setTimeout(function(){
+				// 		buildWorker()
+				// 	}, 10000)
+				// }
+				var interval = setInterval(function(){
+					if (activeBot==botCount){
+						clearInterval(interval)
+						return false
+					}
+					buildWorker()
+
+				},10000)
+
+
+			})
 		})
 	})
 
@@ -48,8 +71,74 @@ if (cluster.isMaster) {
 
 } else {
 
+	var db = require("../lib/db.js")
+	var _ = require('highland')
+	var utils = require("../lib/utils.js")
+	var total = 0
 
+	var addResourceStats = _.wrapCallback(function addTopFiveSubject(agent,cb){
+		db.returnCollectionTripleStore("resources",function(err,resourcesCollection){
+			resourcesCollection.find({allAgents: agent.uri}).toArray(function(err,allResources){				
+				var allTerms = []
+				allResources.forEach(r =>{
+					allTerms.push(utils.extractTerms(r,agent.uri))
+				})
+				allTerms = utils.topFiveTerms(allTerms)
 
+				var allRoles = []
+				allResources.forEach(r =>{
+					allRoles.push(utils.extractRoles(r,agent.uri))
+				})
+				allRoles = utils.topFiveTerms(allRoles)
+
+				agent.topFiveTerms = allTerms
+				agent.topFiveRoles = allRoles
+				agent.useCount = allResources.length
+				cb(err,agent)
+			})
+		})
+	})
+
+	var updateAgentsCollection = _.wrapCallback(function updateAgentsCollection(agent,cb){
+		db.returnCollectionTripleStore("agents",function(err,agentsCollection){
+			agentsCollection.update({ uri:agent.uri }, {$set: { topFiveTerms: agent.topFiveTerms, topFiveRoles: agent.topFiveRoles, useCount: agent.useCount } },function(err,res){
+				if (err) console.log(err)
+				cb(err,agent)
+			})
+		})
+	})
+
+	db.returnCollectionTripleStore("agents",function(err,agentsCollection){
+		//ask for where to start
+		process.send({ start: true })
+
+		process.on('message', function(msg){
+			if (typeof msg.start === 'number'){
+				console.log(cluster.worker.id, " Starting at",msg.start, "Limit ",msg.total )
+				_(agentsCollection.find({}).skip(parseInt(msg.start)).limit(msg.total).stream())
+					.map(utils.extractIndexFields)
+					.map(addResourceStats)
+					.sequence()		
+					.map(updateAgentsCollection)
+					.sequence()					
+					.batch(999)
+					.map(x =>{
+						total = total + x.length
+						//console.log(total)
+						process.send({ totalUpdate: x.length })
+						return x
+					})					
+					.map(_.curry(db.indexAgents))
+					.nfcall([])
+					.series()
+
+					.done(function(err){
+						if (err) console.log(err)						
+						console.log("Done")
+					})
+			}
+		})
+	})
 }
 
 
