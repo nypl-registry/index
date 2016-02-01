@@ -137,7 +137,7 @@ if (cluster.isMaster) {
 		process.on('message', function(msg){
 			if (typeof msg.start === 'number'){
 				console.log(cluster.worker.id, " Starting at",msg.start, "Limit ",msg.total )
-				_(agentsCollection.find({}).skip(parseInt(msg.start)).limit(msg.total).batch(100).stream())
+				_(agentsCollection.find({}).skip(parseInt(msg.start)).limit(msg.total).batchSize(100).stream())
 					.map(utils.extractIndexFields)
 					.map(addResourceStats)
 					.sequence()		
