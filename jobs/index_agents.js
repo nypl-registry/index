@@ -9,7 +9,7 @@ if (cluster.isMaster) {
 	var contrib = require('blessed-contrib')
 	//var screen = blessed.screen()
 	
-	var botCount = 1, activeBot = 0
+	var botCount = 10, activeBot = 0
 	var total = 0
 
 	db.prepareAgentsIndex(function(){
