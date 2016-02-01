@@ -101,7 +101,7 @@ lister.on('end', function() {
 			filename = agent.wikidata + filename
 
 
-			donutWidge.setData([{percent: Math.floor((totalDone/total)*100), label: totalDone +"/"+total, color: 'green'}])
+			donutWidge.setData([{percent: (totalDone/total), label: totalDone +"/"+total, color: 'green'}])
 
 			screen.render()
 
