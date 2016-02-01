@@ -10,16 +10,15 @@ if (cluster.isMaster) {
 	
 	var botCount = 11
 
-
+	//find out how many agents there are total
 	db.returnCollectionTripleStore("agents",function(err,agentsCollection){
 		agentsCollection.count(function(err,count){
 
-
+			//break up how much to work for each bot
 			var perBot = Math.floor(count / botCount)
-			//console.log(perBot)
 
+			//index 0
 			var start = -1
-
 
 			var buildWorker = function(){
 
@@ -29,8 +28,8 @@ if (cluster.isMaster) {
 				console.log('Spawing worker:',worker.id, "starting at: ",start)
 
 				//send the first one
-				//worker.send({ work: getWork(worker.id) })
-				//activeBotCount++
+				worker.send({ start: start })
+				activeBotCount++
 
 			}
 
@@ -40,12 +39,7 @@ if (cluster.isMaster) {
 				}, Math.floor(Math.random() * (10000 - 0)))
 			}
 
-
-
-
-
-
-
+			
 		})
 	})
 
