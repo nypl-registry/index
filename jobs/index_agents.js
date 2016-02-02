@@ -35,7 +35,7 @@ if (cluster.isMaster) {
 
 					worker.on('message', function(msg) {
 						if (msg.start) {
-							worker.send({ start: start , total : perBot -1 })
+							worker.send({ start: start , total : perBot  })
 						}
 
 						if (msg.totalUpdate){
