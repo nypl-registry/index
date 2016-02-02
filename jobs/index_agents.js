@@ -76,49 +76,42 @@ if (cluster.isMaster) {
 	var utils = require("../lib/utils.js")
 	var total = 0
 
+	var skipRebuildResources = true
+
 	var addResourceStats = _.wrapCallback(function addTopFiveSubject(agent,cb){
-		db.returnCollectionTripleStore("resources",function(err,resourcesCollection){
-
-			var allTerms = []
-			var allRoles = []
-			var totalResources = 0
-
-			_(resourcesCollection.find({allAgents: agent.uri}).stream())
-				.map(r =>{
-					allTerms.push(utils.extractTerms(r,agent.uri))
-					allRoles.push(utils.extractRoles(r,agent.uri))
-					totalResources++
-				}).done(function(){
-
-					allTerms = utils.topFiveTerms(allTerms)
-					allRoles = utils.topFiveTerms(allRoles)
-					agent.topFiveTerms = allTerms
-					agent.topFiveRoles = allRoles
-					agent.useCount = totalResources
-
-					cb(err,agent)
-				})
 
 
-			// resourcesCollection.find({allAgents: agent.uri}).toArray(function(err,allResources){				
-			// 	var allTerms = []
-			// 	allResources.forEach(r =>{
-			// 		allTerms.push(utils.extractTerms(r,agent.uri))
-			// 	})
-			// 	allTerms = utils.topFiveTerms(allTerms)
+		if (skipRebuildResources && agent.topFiveTerms && agent.topFiveRoles && agent.useCount){
+			//if enabled we will just use the existing data
+			cb(null,agent)
 
-			// 	var allRoles = []
-			// 	allResources.forEach(r =>{
-			// 		allRoles.push(utils.extractRoles(r,agent.uri))
-			// 	})
-			// 	allRoles = utils.topFiveTerms(allRoles)
+		}else{
 
-			// 	agent.topFiveTerms = allTerms
-			// 	agent.topFiveRoles = allRoles
-			// 	agent.useCount = allResources.length
-			// 	cb(err,agent)
-			// })
-		})
+			//rebuild
+
+			db.returnCollectionTripleStore("resources",function(err,resourcesCollection){
+
+				var allTerms = []
+				var allRoles = []
+				var totalResources = 0
+
+				_(resourcesCollection.find({allAgents: agent.uri}).stream())
+					.map(r =>{
+						allTerms.push(utils.extractTerms(r,agent.uri))
+						allRoles.push(utils.extractRoles(r,agent.uri))
+						totalResources++
+					}).done(function(){
+
+						allTerms = utils.topFiveTerms(allTerms)
+						allRoles = utils.topFiveTerms(allRoles)
+						agent.topFiveTerms = allTerms
+						agent.topFiveRoles = allRoles
+						agent.useCount = totalResources
+
+						cb(err,agent)
+					})
+			})
+		}
 	})
 
 	var updateAgentsCollection = _.wrapCallback(function updateAgentsCollection(agent,cb){
