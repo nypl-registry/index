@@ -47,11 +47,6 @@ if (cluster.isMaster) {
 					})
 				}
 
-				// for (var i = 1; i <= botCount; i++) {
-				// 	setTimeout(function(){
-				// 		buildWorker()
-				// 	}, 10000)
-				// }
 				var interval = setInterval(function(){
 					if (activeBot==botCount){
 						clearInterval(interval)
@@ -66,8 +61,9 @@ if (cluster.isMaster) {
 		})
 	})
 
-
-
+	cluster.on('disconnect', function(worker, code, signal) {		
+		console.log("There are",Object.keys(cluster.workers).length,"Bots")
+	})
 
 } else {
 
@@ -150,6 +146,7 @@ if (cluster.isMaster) {
 					.done(function(err){
 						if (err) console.log(err)						
 						console.log("Done")
+						process.exit()
 					})
 			}
 		})
