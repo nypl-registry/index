@@ -9,7 +9,7 @@ if (cluster.isMaster) {
 	var contrib = require('blessed-contrib')
 	//var screen = blessed.screen()
 	
-	var botCount = 20, activeBot = 0
+	var botCount = 15, activeBot = 0
 	var total = 0
 
 	db.prepareAgentsIndex(function(){
@@ -35,7 +35,7 @@ if (cluster.isMaster) {
 
 					worker.on('message', function(msg) {
 						if (msg.start) {
-							worker.send({ start: start , total : perBot })
+							worker.send({ start: start , total : perBot -1 })
 						}
 
 						if (msg.totalUpdate){
