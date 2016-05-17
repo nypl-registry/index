@@ -23,7 +23,7 @@ var argv = require('optimist')
 
 var events = require('events')
 var eventEmitter = new events.EventEmitter()
-var botCount = 5
+var botCount = 1
 
 /*
 var jobTotal = null
