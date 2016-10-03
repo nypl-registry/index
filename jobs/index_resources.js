@@ -80,7 +80,8 @@ if (argv.uri) {
       })
     }
   } else {
-    tasks.push(function () { buildByQuery({}) })
+    // tasks.push(function () { buildByQuery({}) })
+    tasks.push(function () { buildByQuery({"dcterms:identifier.objectUri": {"$regex": '^urn:bnum:'}}) })
   }
 
   var buildNext = function () {
